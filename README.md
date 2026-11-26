@@ -4,8 +4,6 @@
 
 Если вы не слоняры, я запрещаю вам читать.
 
-**The zombies can kill you. A Workshop update doesn't have to kill game night.**
-
 Loadout is a Windows launcher and a mod download service for Project Zomboid dedicated servers. SteamCMD gets the mods from Workshop. Loadout gives you the files **the server is actually using**, even if Workshop got another update ten minutes ago. (For God's sake, please stop hotfixing one misaligned pixel in every Viewpoint add-on.)
 
 The first sync downloads the whole pack. After that, you only get what's missing or changed. One new texture shouldn't mean downloading Sam Altman's entire VRAM chip photo album again.
