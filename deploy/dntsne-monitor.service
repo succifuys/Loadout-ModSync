@@ -1,0 +1,27 @@
+[Unit]
+Description=DNTSNE read-only PZ lifecycle observer
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/dntsne-modsync
+ExecStart=/usr/bin/python3 -m dntsne.host_monitor
+Restart=always
+RestartSec=3
+StateDirectory=dntsne-monitor
+StateDirectoryMode=0755
+UMask=0022
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/dntsne-monitor
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

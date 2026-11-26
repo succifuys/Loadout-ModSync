@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dntsne-modsync"
+version = "0.1.3"
+description = "Revision-pinned Project Zomboid mod synchronization over a private tailnet"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+server = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
+gui = ["flet[desktop]>=0.80,<1"]
+build = ["flet[cli]>=0.80,<1", "pyinstaller>=6.15,<7"]
+test = ["pytest>=8,<10", "httpx>=0.28,<1"]
+
+[project.scripts]
+dntsne-sync = "dntsne.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["dntsne*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

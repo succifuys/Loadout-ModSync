@@ -1,0 +1,42 @@
+# Standalone project. Does not reference or recreate service pz.
+name: dntsne-modsync
+services:
+  modsync:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: dntsne-modsync
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # 174k files in the observed full pack; startup indexing needs this budget.
+    mem_limit: 1536m
+    cpus: 1.0
+    pids_limit: 64
+    environment:
+      DNTSNE_WORKSHOP: /workshop
+      DNTSNE_OBSERVATION: /observation/observation.json
+      DNTSNE_PERSISTENCE: /state/current-index.json
+      # Keep zero until the actual mod licenses have been reviewed.
+      DNTSNE_LICENSES_APPROVED: "${DNTSNE_LICENSES_APPROVED:-0}"
+      DNTSNE_MAX_DOWNLOADS: "3"
+    ports:
+      # Loopback by default; set your own Tailscale IP to allow remote clients.
+      - "${DNTSNE_BIND_IP:-127.0.0.1}:8787:8787/tcp"
+    volumes:
+      - /srv/servers/pz/workshop:/workshop:ro
+      - /var/lib/dntsne-monitor:/observation:ro
+      - /var/lib/dntsne-modsync:/state:rw
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/v1/status', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+

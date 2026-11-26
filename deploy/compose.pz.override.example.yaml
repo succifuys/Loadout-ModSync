@@ -1,0 +1,17 @@
+# Apply to the existing pz project only after a stopped-world backup.
+# Adapt host paths and verify the container image supports /scripts/config/main.py.
+services:
+  pz:
+    stop_grace_period: 6m
+    environment:
+      DNTSNE_LOCAL_MODS: "1"
+      CACHE_DIR: /var/lib/dntsne/pz/Zomboid
+      DNTSNE_JAVA_AGENT: -javaagent:/var/lib/dntsne/pz/Zomboid/mods/ZombieBuddy/libs/ZombieBuddy.jar=policy=deny-new,config_dir=/var/lib/dntsne/pz/Zomboid/.zombie_buddy
+    volumes:
+      - /srv/servers/pz/data:/var/lib/dntsne/pz/Zomboid
+      - /srv/servers/pz/workshop/.dntsne-local-mods:/var/lib/dntsne/pz/Zomboid/mods:ro
+      - /opt/dntsne-modsync/deploy/pz-entrypoint.sh:/scripts/entrypoint.sh:ro
+      - /srv/servers/pz/scripts/dntsne-init.sh:/scripts/init-server.sh:ro
+      - /opt/dntsne-modsync/deploy/pz-main.py:/scripts/config/main.py:ro
+      - /opt/dntsne-modsync/dntsne/local_mods.py:/scripts/config/dntsne_local_mods.py:ro
+      - /opt/dntsne-modsync/dntsne/java_mods.py:/scripts/config/dntsne_java_mods.py:ro
