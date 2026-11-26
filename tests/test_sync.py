@@ -428,6 +428,11 @@ def test_progress_fsyncs_are_bounded_by_batches(engine,build,monkeypatch):
     for number in range(130):
         (build[1]/f'42/media/batch-{number}.lua').write_bytes(b'fixture')
     next_run(build)
+    # This test has no monitor to refresh the heartbeat during slow disk writes.
+    from types import SimpleNamespace
+    monkeypatch.setattr('dntsne.server_index.time', SimpleNamespace(
+        time=lambda: build[2]['observed_at'],
+    ))
     plan=engine.check()
     writes=[]
     original=engine.record_progress
