@@ -4,15 +4,19 @@
 
 Если вы не слоняры, я запрещаю вам читать.
 
-Loadout is a Windows launcher and a mod download service for Project Zomboid dedicated servers. SteamCMD gets the mods from Workshop. Loadout gives you the files **the server is actually using**, even if Workshop got another update ten minutes ago. (For God's sake, please stop hotfixing one misaligned pixel in every Viewpoint add-on.)
+**Keep your Project Zomboid mods in sync with the server.**
 
-The first sync downloads the whole pack. After that, you only get what's missing or changed. One new texture shouldn't mean downloading Sam Altman's entire VRAM chip photo album again.
+[Download for Windows x64](https://github.com/succifuys/Loadout-ModSync/releases/download/v0.1.3/Loadout-ModSync.exe) | [Release notes](https://github.com/succifuys/Loadout-ModSync/releases/tag/v0.1.3) | [Server setup](docs/SERVER-SETUP-EN.md)
 
-This is **0.1.3**. Tested on Windows with a **Build 42.22.2** server. Other builds? Try them on a test server first.
+Loadout is a Windows launcher and a companion service for Project Zomboid dedicated servers. SteamCMD still gets the mods from Workshop. Players get the files **the server is using**, even if Workshop has a newer version.
+
+The first sync downloads the whole pack. Later syncs only download missing or changed files. One changed texture doesn't mean downloading the whole pack again.
+
+**Tested with:** Windows x64 and Project Zomboid Build 42.22.2. For other game builds, try it on a test server first.
 
 ## I just want to play
 
-1. Get the Windows x64 build from your admin or **Releases**, if it's up there. If you got `Loadout-ModSync.exe`, just run it. If you got the folder ZIP with `DNTSNE-ModSync.exe`, unzip the whole thing and leave `_internal` next to it.
+1. Download [`Loadout-ModSync.exe`](https://github.com/succifuys/Loadout-ModSync/releases/download/v0.1.3/Loadout-ModSync.exe) and run it. No installer, Python or separate `_internal` folder required. If your admin gave you the older portable ZIP instead, extract it in full and leave `_internal` next to `DNTSNE-ModSync.exe`.
 2. Start Steam, close the game and join your admin's **Tailscale** network. You need the same game build as the server.
 3. In **Settings**, paste the ModSync URL into **Tailscale server URL**. If the launcher can't find PZ, set **Game folder**. In Steam: **Properties → Installed Files → Browse**. Leave **Mod folder** alone. Steam Workshop already has enough going on.
 4. Hit **Save → Synchronize** and wait. Leave some extra disk space for temporary files.
@@ -22,7 +26,7 @@ This is **0.1.3**. Tested on Windows with a **Build 42.22.2** server. Other buil
 
 ## I run the server
 
-Use the source checkout or the **Server-Linux** ZIP if it's in Releases. It's the mod service, not a copy of the game. You need an existing PZ server in a compatible Docker image, plus Linux, Docker Compose and systemd.
+Clone the repo or use the source archive from [Releases](https://github.com/succifuys/Loadout-ModSync/releases/tag/v0.1.3). It's the mod service, not a copy of the game. You need an existing PZ server in a compatible Docker image, plus Linux, Docker Compose and systemd.
 
 1. Back up the world, INI and Compose files. Try this on a copy. Your friends did not spend three weeks building a wall so you could test on production.
 2. Check the paths in `deploy/compose.modsync.yaml` and run `sudo sh scripts/install-server.sh --approved`. This installs the ModSync service. **It doesn't set up or restart PZ.**
@@ -33,7 +37,7 @@ To update the pack, stop PZ normally and let SteamCMD update the mods on the nex
 
 ## I want to build it
 
-Get the source (or the **Windows-EXE-Build** kit if it's in Releases). Open PowerShell in that folder and run `.\scripts\build-exe.ps1`. You'll need x64 Python 3.12 or newer. Out comes `dist/Loadout-ModSync.exe`. No `_internal` next to it, and no launcher files dumped into your mods folder. For the folder ZIP and checksums, see the [build guide](docs/BUILD.md).
+Get the source from GitHub. Open PowerShell in that folder and run `.\scripts\build-exe.ps1`. You'll need x64 Python 3.12 or newer. Out comes `dist/Loadout-ModSync.exe`. No `_internal` next to it, and no launcher files dumped into your mods folder. For the folder ZIP and checksums, see the [build guide](docs/BUILD.md).
 
 **Next up:** let a separate machine serve the downloads. For now, ModSync runs alongside PZ on the same host.
 

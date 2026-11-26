@@ -2,6 +2,8 @@
 
 [English](README.md) · [ロシア語版](ReadMe-RU.md)
 
+[EXE をダウンロード](https://github.com/succifuys/Loadout-ModSync/releases/download/v0.1.3/Loadout-ModSync.exe) | [v0.1.3](https://github.com/succifuys/Loadout-ModSync/releases/tag/v0.1.3)
+
 BY CHAT**JP**T IM SORRY
 
 Loadout ModSync は、**Project Zomboid Dedicated Server** 用の Windows ランチャーと、MOD を配るためのサーバー側ツールです。鯖は今までどおり SteamCMD で Workshop から MOD を取ってきます。プレイヤーに渡すのは、**今その鯖で動いている版**。さっき Workshop に来た最新版とは限りません。
