@@ -1,6 +1,6 @@
 # Loadout ModSync
 
-[ロシア語版](ReadMe-RU.md)
+[English](README.md) · [ロシア語版](ReadMe-RU.md)
 
 BY CHAT**JP**T IM SORRY
 
@@ -14,10 +14,10 @@ Loadout ModSync は、**Project Zomboid Dedicated Server** 用の Windows ラン
 
 必要なのは Steam 版 Project Zomboid、鯖と同じゲームのバージョン、Windows x64、そして管理人からもらった **ModSync の URL**。ゲームに入るためのアドレスとポートは別です。とりあえず両方に同じものを入れるのはナシで。
 
-1. Windows x64 用 ZIP を管理人からもらうか、**Releases** から取ってきます。遊ぶだけならソースコードはいりません。
-2. ZIP を**丸ごと**展開します。置き場所は `C:\Games\LoadoutModSync` などでOK。`DNTSNE-ModSync.exe` を起動します。EXE の名前はまだ旧名です。`_internal` は隣に置いたまま。EXE だけ連れていくと起きません。Python は別に入れなくて大丈夫です。
-3. Steam を起動します。管理人に Tailscale や Radmin VPN を指定されたら、そのネットワークにつなぎます。指定がなく、すでにつながるなら何も足さなくてOK。**同期する前に PZ は閉じてください。**
-4. **Settings** の **Tailscale server URL** に、管理人からもらった URL を入れます。`http://pz-host:8787` は例です。ゲームが見つからないときは **Game folder** を指定します。Steam の **プロパティ → インストール済みファイル → 参照** から開いて、エクスプローラーのアドレスをコピペ。ここまで来た君ならいける。設定済みの ZIP なら、URL とゲームの場所だけ確認すればOKです。
+1. Windows x64 用のビルドを管理人からもらうか、**Releases** にあればそこから取ってきます。遊ぶだけならソースコードはいりません。
+2. 単体版の `Loadout-ModSync.exe` ならそのまま起動。フォルダー版なら ZIP を**丸ごと**展開します。置き場所は `C:\Games\LoadoutModSync` などでOK。`DNTSNE-ModSync.exe` を起動します。EXE の名前はまだ旧名です。`_internal` は隣に置いたまま。EXE だけ連れていくと起きません。Python は別に入れなくて大丈夫です。
+3. Steam を起動します。管理人の Tailscale ネットワークにつなぎます。この版は通常の公開 IP や Radmin VPN のアドレスでは同期できません。**同期する前に PZ は閉じてください。**
+4. **Settings** の **Tailscale server URL** に、管理人からもらった URL を入れます。たとえば `http://100.64.0.1:8787`。IP は実際の Tailscale IP に替えてね。ゲームが見つからないときは **Game folder** を指定します。Steam の **プロパティ → インストール済みファイル → 参照** から開いて、エクスプローラーのアドレスをコピペ。ここまで来た君ならいける。設定済みの ZIP なら、URL とゲームの場所だけ確認すればOKです。
 5. **Mod folder** は基本そのまま。初期設定は `%LOCALAPPDATA%\DNTSNE\ModSync\game-profile\mods` です。**Workshop フォルダーは指定しないでね。ここだけはマジで。** 最後に **Save**。
 6. **Synchronize** を押して、準備が終わるまで待ちます。初回はちょっと長いので、お茶でもどうぞ。空き容量は **MOD パックのサイズより多めに**。途中のファイルにも置き場所が要ります。
 7. **Launch Project Zomboid** から起動します。この MOD パックで遊ぶときは **Steam の「プレイ」ではなく、ランチャーから**。ゲームのメニューで、管理人から聞いたアドレスとポートに接続します。
@@ -44,7 +44,7 @@ Workshop の登録と PZ 本体は変更しません。バニラや普段の Wor
 **Linux、Docker Compose、systemd で PZ サーバーをすでに動かしている場合**は、次の手順で試せます。この例は WorkshopManager と `/scripts/config/main.py`、`/scripts/init-server.sh` があるイメージ向けです。別のイメージや Windows Dedicated Server 向けの自動インストーラーはまだありません。
 
 1. **ワールド、INI、Compose の設定をバックアップします。** 最初は本番ではなく、別のコンテナとワールドのコピーで試します。
-2. **MOD 配布用のサービスを入れます。** ソースの `deploy/compose.modsync.yaml` を開き、パスとアドレスを自分の環境に合わせます。Tailscale などのプライベートなアドレスを使います。ソースのルートで次を実行します。
+2. **MOD 配布用のサービスを入れます。** ソースの `deploy/compose.modsync.yaml` を開き、パスとアドレスを自分の環境に合わせます。初回はホスト内からしかアクセスできません。あとで配布を有効にするときに Tailscale IP を指定します。ソースのルートで次を実行します。
 
    ```bash
    sudo sh scripts/install-server.sh --approved
@@ -52,7 +52,7 @@ Workshop の登録と PZ 本体は変更しません。バニラや普段の Wor
 
    監視サービスと API が入ります。**PZ 本体の設定や再起動は、このスクリプトでは行いません。**
 3. **ゲームサーバーがローカルの MOD を読むようにします。** `deploy/compose.pz.override.example.yaml` のパスを調整し、テスト用の Compose に追加します。起動設定の `WORKSHOP_ITEMS` は SteamCMD 用に残します。起動後の INI では `WorkshopItems=` が空で、`Mods=` と `Map=` は必要な値のままか確認します。[パスの例と起動ファイルの準備](docs/SERVER-SETUP-JP.md)も参照してください。
-4. **配布を有効にして確認します。** MOD の配布条件を確認したら、[手順](docs/SERVER-SETUP-JP.md)に沿って `DNTSNE_LICENSES_APPROVED=1` を設定します。同じネットワークの別の PC から `http://ホスト名:8787/api/v1/status` を開き、`"state":"ready"` が返ったら、プレイヤーに `http://ホスト名:8787` を伝えます。ゲームの接続先は別に伝えてください。
+4. **配布を有効にして確認します。** MOD の配布条件を確認したら、[手順](docs/SERVER-SETUP-JP.md)に沿って `DNTSNE_LICENSES_APPROVED=1` を設定します。同じネットワークの別の PC から `http://TAILSCALE-IP:8787/api/v1/status` を開き、`"state":"ready"` が返ったら、プレイヤーに `http://TAILSCALE-IP:8787` を伝えます。ゲームの接続先は別に伝えてください。
 
 **MOD を更新するとき：** PZ を通常の手順で再起動し、`ready` を待ってからプレイヤーに **Synchronize** を押してもらいます。PZ の動作中は、Workshop フォルダーを手作業で更新しないでください。
 
@@ -68,11 +68,10 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe client_app.py
 ```
 
-Python **3.12 以上**が必要です。lock ファイルの依存パッケージが入るバージョンを使ってください。テストする場合は `requirements-server.lock` の依存パッケージと `pytest` も入れて、`.\.venv\Scripts\python.exe -m pytest` を実行します。配布用の Windows ビルドは `scripts/build-client.ps1` で作ります。出力先は `dist/0.1.3/DNTSNE-ModSync` です。EXE だけでなく `_internal` を含むフォルダー全体を配布します。
+Python **3.12 以上**が必要です。lock ファイルの依存パッケージが入るバージョンを使ってください。テストする場合は `requirements-server.lock` の依存パッケージと `pytest httpx` も入れて、`.\.venv\Scripts\python.exe -m pytest` を実行します。配布用の Windows ビルドは `scripts/build-client.ps1` で作ります。出力先は `dist/0.1.3/DNTSNE-ModSync` です。EXE だけでなく `_internal` を含むフォルダー全体を配布します。単体 EXE が欲しい場合は `.\scripts\build-exe.ps1` を実行します。出力は `dist/Loadout-ModSync.exe`。[ビルドと ZIP の作り方（英語）](docs/BUILD.md)。
 
-- [プレイヤー向けの詳細（ロシア語）](docs/PLAYERS.md)
-- [ファイルの確認とダウンロードの仕組み（ロシア語）](docs/PROTOCOL.md)
+- [ファイルの確認とダウンロードの仕組み（英語）](docs/PROTOCOL.md)
 - [0.1.3 の変更点（英語）](docs/RELEASE-0.1.3.md)
-- [依存パッケージと配布について（ロシア語）](docs/LICENSES.md)
+- [依存パッケージと配布について（英語）](docs/LICENSES.md)
 
 **今後の予定：** ゲームサーバーとは別のホストから MOD を配れるようにします。現在は PZ と同じホストで API を動かし、準備済みの MOD を読み込む構成です。別ホストでの配布はまだ対応していません。

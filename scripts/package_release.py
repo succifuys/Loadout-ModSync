@@ -1,60 +1,107 @@
-"""Package only application artifacts; never include Workshop, secrets or audit input."""
+"""Build release ZIPs from explicit application file lists."""
 import hashlib
-import importlib.metadata as metadata
 import json
-import shutil
-import sys
+import tomllib
 import zipfile
 from pathlib import Path
 
-root=Path(__file__).resolve().parent.parent
-version='0.1.3'
-bundle=root/'dist'/version/'DNTSNE-ModSync'
-assert (bundle/'DNTSNE-ModSync.exe').is_file()
-shutil.copytree(root/'docs',bundle/'docs',dirs_exist_ok=True)
-for name in ('README.md','readmeJP.md','THIRD-PARTY-NOTICES.md'):
-    shutil.copyfile(root/name,bundle/name)
-notices=bundle/'THIRD-PARTY-LICENSES'
-notices.mkdir(exist_ok=True)
-packages=['flet','flet-desktop','oauthlib','repath','msgpack','httpx','httpcore','anyio','idna','certifi','click','rich','markdown-it-py','mdurl','six','colorama','typing-extensions','pygments','setuptools','packaging','pyinstaller']
-for name in packages:
-    distribution=metadata.distribution(name)
-    for item in distribution.files or ():
-        upper=Path(item).name.upper()
-        if not upper.startswith(('LICENSE','LICENCE','COPYING','NOTICE')):
-            continue
-        path=distribution.locate_file(item)
-        if path.is_file() and path.suffix not in ('.py','.pyc'):
-            destination=notices/name/str(item).replace('..','_')
-            destination.parent.mkdir(parents=True,exist_ok=True)
-            shutil.copyfile(path,destination)
-python_license=Path(sys.base_prefix)/'LICENSE.txt'
-if python_license.is_file():
-    shutil.copyfile(python_license,notices/'Python-LICENSE.txt')
-portable=root/f'dist/DNTSNE-ModSync-{version}-candidate-Windows-x64.zip'
-with zipfile.ZipFile(portable,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
-    for path in sorted(bundle.rglob('*')):
-        if path.is_file():
-            assert not path.is_symlink()
-            archive.write(path,path.relative_to(bundle.parent).as_posix())
-source_zip=root/f'dist/DNTSNE-ModSync-{version}-source.zip'
-with zipfile.ZipFile(source_zip,'w',compression=zipfile.ZIP_DEFLATED) as archive:
-    for folder in ('dntsne','scripts','tests','docs','deploy'):
-        for path in sorted((root/folder).rglob('*')):
-            if path.is_file() and '__pycache__' not in path.parts:
-                archive.write(path,path.relative_to(root).as_posix())
-    for name in ('README.md','readmeJP.md','THIRD-PARTY-NOTICES.md','pyproject.toml','requirements-server.lock','requirements-client.lock','client_app.py','.gitignore'):
-        archive.write(root/name,name)
-server_zip=root/f'dist/DNTSNE-ModSync-{version}-server.zip'
-with zipfile.ZipFile(server_zip,'w',compression=zipfile.ZIP_DEFLATED) as archive:
-    for folder in ('dntsne','deploy'):
-        for path in sorted((root/folder).rglob('*')):
-            if path.is_file() and '__pycache__' not in path.parts:
-                archive.write(path,path.relative_to(root).as_posix())
-    for name in ('README.md','pyproject.toml','requirements-server.lock',
-                 'readmeJP.md','docs/SERVER-SETUP.md','docs/SERVER-SETUP-JP.md','docs/PROTOCOL.md','docs/LICENSES.md','THIRD-PARTY-NOTICES.md',
-                 'scripts/install-server.sh','scripts/uninstall-server.sh'):
-        archive.write(root/name,name)
-checksums={p.name:hashlib.file_digest(p.open('rb'),'sha256').hexdigest() for p in (portable,source_zip,server_zip,bundle/'DNTSNE-ModSync.exe')}
-(root/f'dist/SHA256SUMS-{version}.json').write_text(json.dumps(checksums,indent=2),encoding='utf-8')
-print(json.dumps({p.name:p.stat().st_size for p in (portable,source_zip,server_zip)},indent=2))
+ROOT = Path(__file__).resolve().parents[1]
+README = ("README.md", "ReadMe-RU.md", "ReadMe-JP.md",
+          "THIRD-PARTY-NOTICES.md")
+DOCS = (
+    "docs/BUILD.md", "docs/LICENSES.md", "docs/PROTOCOL.md", "docs/RELEASE-0.1.3.md",
+    "docs/SERVER-SETUP.md", "docs/SERVER-SETUP-EN.md", "docs/SERVER-SETUP-JP.md",
+)
+SERVER = (
+    "dntsne/__init__.py", "dntsne/common.py", "dntsne/host_monitor.py",
+    "dntsne/java_mods.py", "dntsne/local_mods.py", "dntsne/manifest.py",
+    "dntsne/server.py", "dntsne/server_index.py",
+    "deploy/Dockerfile", "deploy/compose.modsync.yaml", "deploy/compose.pz.override.example.yaml",
+    "deploy/dntsne-monitor.service", "deploy/patch-pz-init.py", "deploy/pz-entrypoint.sh",
+    "deploy/pz-main.py", "scripts/install-server.sh", "scripts/uninstall-server.sh",
+    "requirements-server.lock", "pyproject.toml", ".dockerignore",
+)
+CLIENT = (
+    "client_app.py", "requirements-client.lock", "dntsne/__init__.py",
+    "dntsne/cli.py", "dntsne/common.py", "dntsne/game.py", "dntsne/gui.py",
+    "dntsne/java_version.py", "dntsne/manifest.py", "dntsne/network.py",
+    "dntsne/profile.py", "dntsne/selftest.py", "dntsne/server_index.py", "dntsne/state.py", "dntsne/sync.py",
+    "scripts/build-client.ps1", "scripts/build-exe.ps1", "scripts/collect-notices.py",
+    "scripts/install-client.ps1", "scripts/uninstall-client.ps1", "scripts/windows-build-common.ps1",
+)
+TESTS = (
+    "tests/TEST_BY_CODEX.md", "tests/conftest.py", "tests/test_bundles.py",
+    "tests/test_gui.py", "tests/test_java_mods.py", "tests/test_junctions.py",
+    "tests/test_launcher.py", "tests/test_live_api.py", "tests/test_local_mods.py",
+    "tests/test_manifest_server.py", "tests/test_monitor.py", "tests/test_network.py",
+    "tests/test_profile.py", "tests/test_release_packaging.py", "tests/test_sync.py",
+    "tests/test_validation_progress.py",
+)
+
+
+def write_zip(target, entries):
+    # Check the inputs before opening/truncating the artifact.
+    entries = list(entries)
+    for path, _ in entries:
+        if not path.is_file() or path.is_symlink():
+            raise SystemExit(f"Missing or unsafe release input: {path}")
+    with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path, name in entries:
+            archive.write(path, name)
+
+
+def artifact_files(folder):
+    if not folder.is_dir() or folder.is_symlink() or folder.is_junction():
+        raise SystemExit(f"Missing or unsafe build folder: {folder}")
+    for path in sorted(folder.iterdir()):
+        if path.is_symlink() or path.is_junction():
+            raise SystemExit(f"Unsafe build entry: {path}")
+        if path.is_dir():
+            yield from artifact_files(path)
+        elif path.is_file():
+            yield path
+
+
+def package(root=ROOT):
+    with (root / "pyproject.toml").open("rb") as stream:
+        version = tomllib.load(stream)["project"]["version"]
+    dist = root / "dist"
+    bundle = dist / version / "DNTSNE-ModSync"
+    exe = bundle / "DNTSNE-ModSync.exe"
+    if not exe.is_file():
+        raise SystemExit("Build the portable client first: scripts/build-client.ps1")
+
+    def files(names, prefix=""):
+        return ((root / name, prefix + name) for name in sorted(set(names)))
+
+    def built(folder):
+        return ((path, "DNTSNE-ModSync/" + path.relative_to(bundle).as_posix())
+                for path in artifact_files(bundle / folder))
+
+    prefix = f"Loadout-ModSync-{version}"
+    portable = dist / f"{prefix}-Windows-x64.zip"
+    source = dist / f"{prefix}-Source.zip"
+    server = dist / f"{prefix}-Server-Linux.zip"
+    build = dist / f"{prefix}-Windows-EXE-Build.zip"
+    write_zip(portable, [
+        (exe, "DNTSNE-ModSync/DNTSNE-ModSync.exe"),
+        *built("_internal"), *built("THIRD-PARTY-LICENSES"),
+        *files(README + DOCS, "DNTSNE-ModSync/"),
+    ])
+    write_zip(source, files(README + DOCS + CLIENT + SERVER + TESTS +
+                            (".gitattributes", ".gitignore", "scripts/package_release.py")))
+    write_zip(server, files(README + DOCS + SERVER))
+    write_zip(build, files(README + DOCS + CLIENT + ("pyproject.toml",)))
+    artifacts = (portable, source, server, build)
+    checksums = {}
+    for path in artifacts:
+        with path.open("rb") as stream:
+            checksums[path.name] = hashlib.file_digest(stream, "sha256").hexdigest()
+    (dist / f"SHA256SUMS-{version}.json").write_text(
+        json.dumps(checksums, indent=2) + "\n", encoding="utf-8"
+    )
+    return artifacts
+
+
+if __name__ == "__main__":
+    print(*(str(path) for path in package()), sep="\n")

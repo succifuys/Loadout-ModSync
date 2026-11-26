@@ -1,6 +1,6 @@
 # Loadout ModSync：サーバー設定の詳しい手順
 
-[日本語 README に戻る](../readmeJP.md) · [Русская версия](SERVER-SETUP.md)
+[日本語 README に戻る](../ReadMe-JP.md) · [English](SERVER-SETUP-EN.md) · [Русская версия](SERVER-SETUP.md)
 
 ### どこに何を入れるか
 
@@ -17,11 +17,11 @@
 - プレイヤーに知らせ、管理用の RCON で `save`、次に `quit` を実行し、ゲームサーバーが止まるまで待ちます。停止後に**ワールド、サーバーの INI、Compose の設定**をバックアップします。保存中のコンテナを強制終了しないでください。
 - 最初は別のコンテナとワールドのコピーを使います。同じセーブ先を 2 台のサーバーで同時に使わないでください。
 - 設定例では `/srv/servers/pz` がゲームの作業場所で、`data` にワールドや設定、`workshop` に Workshop のファイルがあります。Mod Sync 本体は `/opt/dntsne-modsync` に入ります。自分の構成に合わせて、関係する設定のパスをそろえてください。
-- `dntsne/host_monitor.py` と `deploy/dntsne-monitor.service` を確認します。標準のコンテナ名は `pz-server`、監視するゲームのポートは `16261`、読み込む INI は `data/Server/DNTSNE.ini` です。ポートや INI 名が違う場合は監視側も調整が必要です。ルートとコンテナ名は `--root` と `--container` で指定できます。
+- `dntsne/host_monitor.py` と `deploy/dntsne-monitor.service` を確認します。標準のコンテナ名は `pz-server`、監視するゲームのポートは `16261`、読み込む INI は `data/Server/DNTSNE.ini` です。ポートや INI 名が違う場合は監視側も調整が必要です。ルートとコンテナ名を変える場合は、インストール前にサービスファイルの `ExecStart` に `--root` と `--container` を足します。ルートの下には `data` と `workshop` が必要です。
 
 ### 2. 監視サービスと配布用 API を入れる
 
-`deploy/compose.modsync.yaml` のアドレスとパスを自分のものに直します。初期設定では `8787/tcp` は `127.0.0.1` にだけ開きます。プレイヤー向けに公開するときは、下の例に沿って `DNTSNE_BIND_IP` に自分の Tailscale IP を指定します。インターネットには公開しないでください。ゲーム用ポートと API 用ポートは別です。同期のために RCON を外に公開する必要はありません。
+`deploy/compose.modsync.yaml` のWorkshop のパスを自分の環境に合わせます。監視サービスにはホスト側に Python 3.10 以上が必要です。配布用のアドレスは手順4で設定します。初期設定では `8787/tcp` は `127.0.0.1` にだけ開きます。プレイヤー向けに公開するときは、下の例に沿って `DNTSNE_BIND_IP` に自分の Tailscale IP を指定します。インターネットには公開しないでください。ゲーム用ポートと API 用ポートは別です。同期のために RCON を外に公開する必要はありません。
 
 初回は設定とパスを確認してから、ソースのルートで実行します。
 
@@ -33,14 +33,14 @@ sudo sh scripts/install-server.sh --approved
 
 ### 3. PZ がローカルの MOD を読むようにする
 
-1. `deploy/compose.pz.override.example.yaml` をコピーして、既存の Compose に追加する設定を作ります。先に `workshop/.dntsne-local-mods` を作り、ゲームに読み込み専用で割り当てます。元の Workshop ファイルと同じデータを参照する仕組みなので、両方を同じファイルシステムに置きます。
-2. 使用する Docker イメージと同じ版から、元の `/scripts/init-server.sh` を取り出して保存します。Java エージェント用の例を使う場合は、ソースのルートで下のコマンドを実行し、別ファイルとして作ります。
+1. `deploy/compose.pz.override.example.yaml` をコピーして、既存の Compose に追加する設定を作ります。Workshop 自体はコンテナの `/root/.local/share/Steam/steamapps/workshop` に読み書き可能でマウントします。先に `workshop/.dntsne-local-mods` を作り、ゲームに読み込み専用で割り当てます。元の Workshop ファイルと同じデータを参照する仕組みなので、両方を同じファイルシステムに置きます。
+2. 使用する Docker イメージと同じ版から、元の `/scripts/init-server.sh` を取り出して保存します。Java エージェントを使わない場合も、この override 例には別ファイルが必要です。ソースのルートで下のコマンドを実行します。
 
 ```bash
 python3 deploy/patch-pz-init.py /path/to/original-init-server.sh /path/to/dntsne-init.sh
 ```
 
-   認識できないというエラーが出たら、無理に通さず、イメージに合わせて設定を見直します。例には ZombieBuddy 用の設定があります。使う場合だけ正しい JAR の場所を指定してください。使わない場合は `DNTSNE_JAVA_AGENT` の例を外し、テストサーバーの起動を確認します。ゲーム本体の JAR は置き換えません。
+   認識できないというエラーが出たら、無理に通さず、イメージに合わせて設定を見直します。ZombieBuddy の例はコメントにしてあります。必要な場合だけ `DNTSNE_JAVA_AGENT` を有効にして、正しい JAR の場所を指定してください。ゲーム本体の JAR は置き換えません。
 
 3. SteamCMD に必要なため、起動設定の `WORKSHOP_ITEMS` には数値の Workshop ID を残します。`MODS` には Mod ID、`MAP` にはマップの設定を入れます。別々の値です。一方、準備後の**ゲーム側の INI** では `WorkshopItems=` が空であることを確認します。こうすると接続時に Workshop から別の版を取るように求められず、ローカルの MOD を使えます。`Mods=` と `Map=` も確認します。
 4. 起動前に Compose の設定を確認します。ファイル名は自分の環境に合わせてください。
@@ -49,7 +49,7 @@ python3 deploy/patch-pz-init.py /path/to/original-init-server.sh /path/to/dntsne
 docker compose -f compose.yaml -f compose.modsync.override.yaml config --quiet
 ```
 
-   Linux でマウントする `pz-entrypoint.sh` と `dntsne-init.sh` に実行権限があるか確認してから、テスト用 PZ を同じ Compose 設定で起動し、必要な MOD とマップが読み込まれるか確認します。API のインストーラーだけでは PZ 側の設定は変わりません。
+   Linux でマウントする `pz-entrypoint.sh` と `dntsne-init.sh` に実行権限があるか確認してから（導入済みのものは `sudo chmod +x /opt/dntsne-modsync/deploy/pz-entrypoint.sh`）、、テスト用 PZ を同じ Compose 設定で起動し、必要な MOD とマップが読み込まれるか確認します。API のインストーラーだけでは PZ 側の設定は変わりません。
 
 ### 4. 配布を有効にする
 
@@ -65,10 +65,10 @@ sudo docker compose --env-file /opt/dntsne-modsync/.env \
 
 ### 5. プレイヤー側まで確認する
 
-同じネットワークにいる別の PC から、`pz-host` を自分のアドレスに変えて確認します。
+同じネットワークにいる別の PC から、例の IP をサーバーの Tailscale IP に変えて確認します。
 
 ```bash
-curl -fsS http://pz-host:8787/api/v1/status
+curl -fsS http://100.64.0.1:8787/api/v1/status
 ```
 
 `"state":"ready"`、PZ のバージョン、`revision` が返れば、配布の準備ができています。応答はあるのに準備ができない場合はログを見ます。

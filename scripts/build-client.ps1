@@ -1,10 +1,18 @@
+param([string]$Python)
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'windows-build-common.ps1')
 Push-Location $projectRoot
 try {
-    & .\.venv\Scripts\flet.exe pack client_app.py -D -n DNTSNE-ModSync --distpath dist/0.1.3 --product-name 'Loadout ModSync' --product-version 0.1.3 --file-version 0.1.3.0 -y
-    if ($LASTEXITCODE -ne 0) { throw 'flet pack failed' }
-    $smoke = Start-Process -FilePath '.\dist\0.1.3\DNTSNE-ModSync\DNTSNE-ModSync.exe' -ArgumentList '--self-test' -WindowStyle Hidden -Wait -PassThru
-    if ($smoke.ExitCode -ne 0) { throw 'Portable smoke test failed' }
+    $pythonExe = Get-BuildPython $Python
+    $version = Get-ModSyncVersion $pythonExe
+    $output = Join-Path $projectRoot "dist/$version"
+    $bundle = Join-Path $output 'DNTSNE-ModSync'
+    if (Test-Path -LiteralPath $bundle) { throw "Move the existing portable build out of $output first." }
+    $flet = Join-Path (Split-Path -Parent $pythonExe) 'flet.exe'
+    & $flet pack client_app.py -D -n DNTSNE-ModSync --distpath $output --product-name 'Loadout ModSync' --product-version $version --file-version "$version.0" -y
+    if ($LASTEXITCODE -ne 0) { throw 'Portable build failed.' }
+    if (!(Test-Path -LiteralPath (Join-Path $bundle '_internal') -PathType Container)) { throw 'Portable build is missing _internal.' }
+    Test-ModSyncBuild (Join-Path $bundle 'DNTSNE-ModSync.exe')
+    & $pythonExe scripts/collect-notices.py (Join-Path $bundle 'THIRD-PARTY-LICENSES')
+    if ($LASTEXITCODE -ne 0) { throw 'Could not collect license notices.' }
 } finally { Pop-Location }
-
