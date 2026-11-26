@@ -6,9 +6,11 @@ services:
     environment:
       DNTSNE_LOCAL_MODS: "1"
       CACHE_DIR: /var/lib/dntsne/pz/Zomboid
-      DNTSNE_JAVA_AGENT: -javaagent:/var/lib/dntsne/pz/Zomboid/mods/ZombieBuddy/libs/ZombieBuddy.jar=policy=deny-new,config_dir=/var/lib/dntsne/pz/Zomboid/.zombie_buddy
+      # Enable only if your pack needs ZombieBuddy; review the JAR path.
+      # DNTSNE_JAVA_AGENT: -javaagent:/var/lib/dntsne/pz/Zomboid/mods/ZombieBuddy/libs/ZombieBuddy.jar=policy=deny-new,config_dir=/var/lib/dntsne/pz/Zomboid/.zombie_buddy
     volumes:
       - /srv/servers/pz/data:/var/lib/dntsne/pz/Zomboid
+      - /srv/servers/pz/workshop:/root/.local/share/Steam/steamapps/workshop
       - /srv/servers/pz/workshop/.dntsne-local-mods:/var/lib/dntsne/pz/Zomboid/mods:ro
       - /opt/dntsne-modsync/deploy/pz-entrypoint.sh:/scripts/entrypoint.sh:ro
       - /srv/servers/pz/scripts/dntsne-init.sh:/scripts/init-server.sh:ro
